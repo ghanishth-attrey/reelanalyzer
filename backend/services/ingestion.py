@@ -29,8 +29,7 @@ from youtube_transcript_api._errors import TranscriptsDisabled, NoTranscriptFoun
 
 logger = logging.getLogger(__name__)
 
-from core.config import get_settings as _get_settings
-YOUTUBE_API_KEY = _get_settings().youtube_api_key
+YOUTUBE_API_KEY = os.environ.get("YOUTUBE_API_KEY", "")
 YOUTUBE_API_BASE = "https://www.googleapis.com/youtube/v3"
 
 # ─────────────────────────────────────────────
@@ -127,12 +126,15 @@ def get_redis():
         return _redis_client
     try:
         import redis
+        password = os.environ.get("REDIS_PASSWORD") or None
         r = redis.Redis(
             host=os.environ.get("REDIS_HOST", "redis"),
             port=int(os.environ.get("REDIS_PORT", 6379)),
+            password=password,
             db=0,
             decode_responses=True,
             socket_connect_timeout=2,
+            ssl=bool(os.environ.get("REDIS_SSL", "")),
         )
         r.ping()
         _redis_client = r
@@ -447,7 +449,7 @@ def _fetch_yt_captions(yt_id: str) -> Optional[list[dict]]:
             for pattern in patterns:
                 match = _re.search(pattern, html)
                 if match:
-                    caption_url = match.group(1).replace("\\u0026", "&").replace("\\/", "/")
+                    caption_url = match.group(1).replace("\u0026", "&").replace("\/", "/")
                     # Prefer English
                     if "lang=en" in caption_url or "tlang=en" not in caption_url:
                         break
