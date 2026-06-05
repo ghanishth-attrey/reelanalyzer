@@ -13,7 +13,7 @@ class Settings(BaseSettings):
     youtube_api_key: str = ""
 
     # Embeddings
-    embedding_model: str = "BAAI/bge-small-en-v1.5"
+    embedding_model: str = "sentence-transformers/all-MiniLM-L6-v2"
 
     # ChromaDB
     chroma_persist_dir: str = "./chroma_db"
