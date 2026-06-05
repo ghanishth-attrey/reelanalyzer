@@ -12,11 +12,6 @@ from fastapi.middleware.gzip import GZipMiddleware
 
 from core.config import get_settings
 from routers import ingest, chat, proxy
-from services.embeddings import get_embedding_model
-
-# ─────────────────────────────────────────────
-# Logging
-# ─────────────────────────────────────────────
 
 logging.basicConfig(
     level=logging.INFO,
@@ -26,23 +21,13 @@ logger = logging.getLogger(__name__)
 settings = get_settings()
 
 
-# ─────────────────────────────────────────────
-# Lifespan: pre-load embedding model on startup
-# ─────────────────────────────────────────────
-
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     logger.info("Starting ReelAnalyzer backend...")
-    logger.info("Pre-loading embedding model (BGE-small-en-v1.5)...")
-    get_embedding_model()  # Warm up on startup so first request is fast
-    logger.info("Embedding model ready. Server is live.")
+    logger.info("Server is live — models load on first request.")
     yield
     logger.info("Shutting down ReelAnalyzer backend.")
 
-
-# ─────────────────────────────────────────────
-# App
-# ─────────────────────────────────────────────
 
 app = FastAPI(
     title="ReelAnalyzer API",
@@ -51,7 +36,6 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
-# CORS — allow frontend
 origins = settings.allowed_origins.split(",")
 app.add_middleware(
     CORSMiddleware,
@@ -61,10 +45,8 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Gzip compression for faster responses
 app.add_middleware(GZipMiddleware, minimum_size=1000)
 
-# Routers
 app.include_router(ingest.router)
 app.include_router(chat.router)
 app.include_router(proxy.router)
